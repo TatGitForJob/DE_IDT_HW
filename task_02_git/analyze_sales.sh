@@ -1,6 +1,11 @@
 #!/bin/bash
 
-FILE="sales.txt"
+if [[ $# -ne 1 ]]; then
+    printf "Need 1 argument: path to file with sales:\n./analyze_sales.sh ../sales.txt\n"
+    exit 1
+fi
+
+FILE=$1
 
 if [[ ! -f "$FILE" ]]; then
     echo "File $FILE not found"
@@ -13,8 +18,21 @@ declare -A item_sum
 declare -A weekday_of_date
 
 total_sum=0
+count=0
 
-while read -r date weekday item price qty; do
+while read -r date weekday item price qty extra; do
+    count=$((count + 1))
+    if [[ -n "$extra" ]]; then
+        echo "more than 5 elements in line $count"
+        exit 1
+    fi
+
+    if [[ -z "$date" || -z "$weekday" || -z "$item" || -z "$price" || -z "$qty" ]]; then
+        echo "Line have less than 5 elements:"
+        echo "$date $weekday $item $price $qty"
+        exit 1
+    fi
+
     revenue=$(echo "$price * $qty" | bc -l)
     total_sum=$(echo "$total_sum + $revenue" | bc -l)
     day_revenue["$date"]=$(echo "${day_revenue[$date]:-0} + $revenue" | bc -l)
